@@ -18,7 +18,7 @@ This repository includes a file and some links to combined approximately 180k MD
 
 Install the userscript and navigate to /mlp/. Every image has a hide/show button, which adds or removes its MD5 from your local storage databse. On the top right of the page is a button with import/export options for your local storage database. Find some entries for your database in this repository.
 
-# Details
+# Capabilities
 
 This script uses the IndexedDB local storage API of your browser to locally persist MD5 entries. It filters images on 4chan against this local storage, making it possible to have a very large database without performance losses (unlike 4chan X's solution). 
 
@@ -27,6 +27,10 @@ This script uses the IndexedDB local storage API of your browser to locally pers
 The Mutation Observer API is used to apply our filter instantly on page load, during initial DOM parsing (preventing the "flickering" of offending images you have with 4chan X and the 4chan native extension when refreshing the page). 
 
 The code is extremely simple and should be modified easily (please use pull requests or notify me on /mlp/ Fan Site Alternative thread). 
+
+# Limitations
+
+Requires a fairly up-to-date browser version. 
 
 ## Todos
 
