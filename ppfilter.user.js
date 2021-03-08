@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         PPfilter
 // @namespace    http://tampermonkey.net/
-// @updateURL    
-// @downloadURL      
-// @version      0.1
-// @description  Filters images on 4chan by their data-md5 tag
+// @updateURL    https://github.com/MaresOnMyFace/PPfilter/raw/main/ppfilter.user.js
+// @downloadURL  https://github.com/MaresOnMyFace/PPfilter/raw/main/ppfilter.user.js
+// @version      1.0
+// @description  Filters images on 4chan /mlp/ by their data-md5 tag
 // @author       (You)
 // @match        *://boards.4channel.org/mlp*
 // @run-at       document-start
