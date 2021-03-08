@@ -1,2 +1,2 @@
 # PPfilter
-Userscript for filtering images on 4chan by data-md5
+Userscript for filtering images on 4chan /mlp/ by data-md5
