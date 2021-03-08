@@ -1,13 +1,22 @@
 # PPfilter
-Userscript for filtering images on 4chan /mlp/ by data-md5.
+Userscript for filtering images on 4chan /mlp/ by data-md5. Works on any board, just adjust the url.
 
-Works on any board, just adjust the url.
+This repository includes a file and some links to combined approximately 180k MD5s of barby content often reposted on /mlp/.
 
-The repository includes approximately 10k hand-picked MD5 with barby content. Also included is a text file with links to approximately 180k more MD5s of offending content.
+# Installation
+
+1. Have Greasemonkey or Tampermonkey installed
+2. Click this link to install the script: https://github.com/MaresOnMyFace/PPfilter/raw/main/ppfilter.user.js
+3. On the top right of /mlp/ click the Options button and populate your database. For example:
+    * copy/paste your 4chanX MD5 filter list from 4chanX->settings->Filter->MD5 into the TextArea. 
+    * Put any one of these urls into the url field:
+        - `https://raw.githubusercontent.com/MaresOnMyFace/PPfilter/main/mymd5s.json`
+        - `https://u.smutty.horse/lzwizdwkkjg.txt`
+        - `https://u.smutty.horse/lzwjeagjrpa.txt`
 
 # Usage
 
-Install the userscript and navigate to /mlp/. Every image has a hide/show button. On the top right of the page is a button with import/export options for your local MD5 database. You can copy/paste the urls or files from this repository in there to fill your database.
+Install the userscript and navigate to /mlp/. Every image has a hide/show button, which adds or removes its MD5 from your local storage databse. On the top right of the page is a button with import/export options for your local storage database. Find some entries for your database in this repository.
 
 # Details
 
