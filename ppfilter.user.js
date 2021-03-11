@@ -330,22 +330,22 @@ function httpGet(url)
                     if (xmlhttp.readyState==4)
                     {
                         if(xmlhttp.status==200) {
-                            resolve({succ:1, value:xmlhttp.responseText});
+                            resolve({succ:1, value:xmlhttp.responseText, url:url});
                         } else {
                             console.error("[PP XMLHTTP] request bad status:");
                             console.error(xmlhttp);
-                            resolve({succ:0, value:""});
+                            resolve({succ:0, value:"", url:url});
                         }
                     }
                 },
                 onerror: function() {
                     console.error("[PP XMLHTTP] request error:");
-                    resolve({succ:0, value:""});
+                    resolve({succ:0, value:"", url:url});
                 }
             });
         } catch(e) {
             console.error(e);
-            resolve({succ:0, value:""});
+            resolve({succ:0, value:"", url:url});
         }
     });
 }
@@ -363,27 +363,95 @@ function readSingleFile(e,cb) {
   reader.readAsText(file);
 }
 
-function parseImport(str) {
+function parseImport(str,statusStringCallback) {
+    const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+    const md5Regex = /[A-Za-z0-9+/=]{22}==/g;
     var succ = 0;
-    var res = undefined;
+    var res = {arr:undefined,urls:undefined};
     var err = {}
     try {
+        statusStringCallback("Parsing JSON ...");
         var arr = JSON.parse(str);
         succ = 1;
-        res = arr;
+        res = {arr:arr,urls:[]};
+
     } catch(e) {
         err.JsonParser = e;
-        res = [];
-        // todo: isn't there a combinator for this
-        for(const m of str.matchAll(/[A-Za-z0-9+/=]{22}==/g)) {res.push(m[0]);}
-        if(res.length>0) {
+        res = {arr:[],urls:[]};
+        statusStringCallback("Parsing MD5s ...");
+        for(const m of str.matchAll(md5Regex)) {res.arr.push(m[0]);}
+        if(res.arr.length>0) {
             succ=1;
-            err={};
         } else {
-            err.RegexParser = "This regex found no matches: /[A-Za-z0-9+/=]{22}==/g";
+            err.RegexParser = "This regex found no matches: " + md5Regex;
+        }
+        statusStringCallback("Parsing URLs ...");
+        for(const m of str.matchAll(urlRegex)) {res.urls.push(m[0]);}
+
+        if(res.urls.length>0) {
+            succ=1;
+        } else {
+            err.UrlParser = "This regex found no matches: " + urlRegex;
         }
     }
     return {result:res, success:succ, error:err};
+}
+
+function parseAndImport(dbUtilsProm, str, statusStringCallback, onoff, refreshUi) {
+    onoff(false);
+    statusStringCallback("parsing...");
+    var parsed = parseImport(str,statusStringCallback);
+    if(parsed.success) {
+        let arr = parsed.result.arr;
+        let urlct = parsed.result.urls.length;
+        let urli = 0;
+        let badUrls = [];
+        let badUrlParses = [];
+        statusStringCallback("fetching "+urlct+" URLs...");
+        let urlProms =
+            parsed.result.urls.map(function(url) {
+                return httpGet(url).then(function(r) {urli = urli+1;statusStringCallback("fetching "+(urlct-urli)+" URLs...");return r;});
+            });
+        Promise.all(urlProms).then(function(fetched) {
+            urli = 0;
+            statusStringCallback("parsing "+urlct+" URLs...");
+            for(const f of fetched){
+                if(f.succ) {
+                    let parsed = parseImport(f.value,statusStringCallback);
+                    urli = urli+1;
+                    statusStringCallback("parsing "+(urlct-urli)+" URLs...");
+                    if(parsed.success) {
+                        arr = arr.concat(parsed.result.arr); //ignore urls recursively
+                    } else {
+                        badUrlParses.push(parsed);
+                    }
+                } else {
+                    badUrls.push(f);
+                }
+            }
+
+            if(arr.length>0) {
+                function progress(ct) {
+                    if(ct%10==0) statusStringCallback(ct+" of "+arr.length);
+                    if(ct == arr.length) {
+                        onoff(true);
+                        refreshUi();
+                    }
+                }
+                window.PPfilter.setMany(dbUtilsProm,arr,progress).then(function(ct) {(badUrls.length>0||badUrlParses.length>0)?statusStringCallback("imported "+ct+" new! (bad URLs, see console)"):statusStringCallback("imported "+ct+" new! (again?)");});
+            } else {
+                statusStringCallback("broken input. (again?)");
+                onoff(true);
+                console.error(badUrls);
+                console.error(badUrlParses);
+            }
+        });
+    } else {
+        statusStringCallback("broken input. (again?)");
+        onoff(true);
+        console.error("TextArea.value parsing error:");
+        console.error(parsed.error);
+    }
 }
 
 var helpstring = `
@@ -395,6 +463,8 @@ Import data-md5 entries from a string formatted like this:
 * or a list of md5s matching the regex /[A-Za-z0-9+/=]{22}==/g i.e.
 "0YWEsS/eq8fxPU+TWz6wFw== 0ZA25ixqxea8qxvgejdYGw== 0ZDbpkBbjCuokdL8LflQHw=="
 (you can copy the content of the 4chan X settings->filters->Md5 field here directly)
+
+Paste these strings directly, or URLs resolving to these strings, into the text area below. Or put them in a file and use the file picker.
 `
 
 function addMenuButton(dbUtilsProm) {
@@ -451,29 +521,22 @@ function addMenuButton(dbUtilsProm) {
         imm.innerHTML = "wait...";
         function importArr() {
             if(!input.value) {return;}
-            imm.onclick = function() {return;};
 
-            imm.innerHTML = "parsing..."
-            var parsed = parseImport(input.value);
-            if(parsed.success) {
-                var arr = parsed.result;
-                function progress(ct) {
-                    if(ct%10==0) imm.innerHTML = ct+" of "+arr.length;
-                    if(ct == arr.length) {
-                        imm.onclick = importArr;
-                        updateCounting();
-                    }
+            function onoff(isOn) {
+                if(!isOn){
+                    imm.onclick = function() {return;};
+                } else {
+                    imm.onclick = importArr;
                 }
-                window.PPfilter.setMany(dbUtilsProm,arr,progress).then(function(ct) {imm.innerHTML = "imported "+ct+" new! (again?)"});
-            } else {
-                imm.innerHTML = "broken input. (again?)";
-                imm.onclick = importArr;
-                console.error("TextArea.value parsing error:");
-                console.error(parsed.error);
             }
+            function updateStatus(str) { imm.innerHTML = str; }
+            function refreshUi() {updateCounting();};
+
+            parseAndImport(dbUtilsProm,input.value,updateStatus,onoff,refreshUi);
         }
+
         window.PPfilter.countDbEntries(dbUtilsProm).then(function () {
-            imm.innerHTML="Import from string";
+            imm.innerHTML="Import from string(s) or URL(s)";
             imm.onclick = importArr;
         });
         p2.appendChild(imm);
@@ -494,71 +557,22 @@ function addMenuButton(dbUtilsProm) {
             p4.appendChild(fileInput);
             function parseString(str) {
                 if(!str) {return;}
-                fileInput.setAttribute("disabled","");
-                sp.innerHTML = "parsing..."
-                var parsed = parseImport(str);
-                if(parsed.success) {
-                    function progress(ct) {
-                        if(ct%10==0) sp.innerHTML = ct+" of "+parsed.result.length;
-                        if(ct == parsed.result.length) {
-                            fileInput.removeAttribute("disabled");
-                            updateCounting();
-                        }
+
+                function onoff(isOn) {
+                    if(!isOn){
+                        fileInput.setAttribute("disabled","");
+                    } else {
+                        fileInput.removeAttribute("disabled");
                     }
-                    window.PPfilter.setMany(dbUtilsProm,parsed.result,progress).then(function(ct) {sp.innerHTML = "imported "+ct+" new! (again?)"});
-                } else {
-                    fileInput.removeAttribute("disabled");
-                    sp.innerHTML = "broken input. see console. (try again)"
-                    console.error("File parsing error:");
-                    console.error(parsed.error);
                 }
-            }
+                function updateStatus(str) { sp.innerHTML = str; }
+                function refreshUi() {updateCounting();};
+
+                parseAndImport(dbUtilsProm,str,updateStatus,onoff,refreshUi);
+            };
             fileInput.addEventListener('change', function(e) {readSingleFile(e,parseString);}, false);
         });
         container.appendChild(p4);
-
-        // === import from URL button ===
-        var p5 = document.createElement("P");
-        var but = document.createElement("BUTTON");
-        var urlInput = document.createElement("INPUT");
-        urlInput.setAttribute("type","text");
-        but.innerHTML = "wait...";
-        window.PPfilter.countDbEntries(dbUtilsProm).then(function() {
-            but.innerHTML = "import from URL";
-            function fetchAndImport() {
-                if(urlInput.value) {
-                    but.onclick = function(){return;};
-                    but.innerHTML = "fetching...";
-                    httpGet(urlInput.value).then(function(res) {
-                        if(res.succ) {
-                            but.innerHTML = "parsing...";
-                            var parsed = parseImport(res.value);
-                            if(parsed.success) {
-                                function progress(ct) {
-                                    if(ct%10==0) but.innerHTML = ct+" of "+parsed.result.length;
-                                    if(ct == parsed.result.length) {
-                                        updateCounting();
-                                    }
-                                }
-                                window.PPfilter.setMany(dbUtilsProm,parsed.result,progress).then(function(ct) {but.innerHTML = "imported "+ct+" new! (again?)"});
-                            } else {
-                                but.innerHTML = "Parse error. see console. (again?)";
-                                console.error(parsed.error);
-                            }
-                            but.onclick = fetchAndImport;
-                        } else {
-                            but.innerHTML = "HTTP error. see console. (again?)";
-                            but.onclick = fetchAndImport;
-                        }
-                    });
-                }
-            };
-            but.onclick = fetchAndImport;
-        });
-        p5.appendChild(but);
-        p5.appendChild(document.createElement("BR"));
-        p5.appendChild(urlInput);
-        container.appendChild(p5);
 
         function openFn() {
             parent.replaceChild(container,open);
