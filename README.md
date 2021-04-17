@@ -16,12 +16,10 @@ This code is also extremely simple to understand and modify, which is not the ca
 
 1. Have Greasemonkey or Tampermonkey installed
 2. Click this link to install the script: https://github.com/MaresOnMyFace/PPfilter/raw/main/ppfilter.user.js
-3. On the top right of /mlp/ click the Options button and populate your database. For example:
-    * Copy all of these urls into the import text box:
+3. On the top right of /mlp/ click the Options button and populate your database:
+    * Copy url into the import text box:
         ```
         https://raw.githubusercontent.com/MaresOnMyFace/PPfilter/main/mymd5s.json
-        https://u.smutty.horse/lzwizdwkkjg.txt
-        https://u.smutty.horse/lzwjeagjrpa.txt
         ```
     * copy/paste your 4chanX MD5 filter list from 4chanX->settings->Filter->MD5 into the TextArea. 
 
