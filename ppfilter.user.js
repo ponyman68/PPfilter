@@ -3,10 +3,11 @@
 // @namespace    http://tampermonkey.net/
 // @updateURL    https://github.com/MaresOnMyFace/PPfilter/raw/main/ppfilter.user.js
 // @downloadURL  https://github.com/MaresOnMyFace/PPfilter/raw/main/ppfilter.user.js
-// @version      1.1
+// @version      1.2
 // @description  Filters images on 4chan /mlp/ by their data-md5 tag
 // @author       (You)
 // @match        *://boards.4channel.org/mlp*
+// @match        *://boards.4chan.org/mlp*
 // @run-at       document-start
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @grant        GM.xmlHttpRequest
