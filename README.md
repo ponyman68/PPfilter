@@ -1,7 +1,7 @@
 # PPfilter
 Userscript for filtering images on 4chan /mlp/ by data-md5. Works on any board, just adjust the url.
 
-This repository includes approximately 180k MD5s of barby content often reposted on /mlp/.
+This repository includes approximately 200k MD5s of barbie images.
 
 # Installation
 
