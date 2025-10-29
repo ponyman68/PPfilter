@@ -1,7 +1,7 @@
 # PPfilter
 Userscript for filtering images on 4chan /mlp/ by data-md5. Works on any board, just adjust the url.
 
-This repository includes approximately 180k MD5s of barby content often reposted on /mlp/. The goal is browsing without having to view offending content. 
+This repository includes approximately 180k MD5s of barby content often reposted on /mlp/.
 
 # Installation
 
@@ -16,21 +16,20 @@ This repository includes approximately 180k MD5s of barby content often reposted
 
 # Why use this over my existing 4chan X Md5 filter setup?
 
-* this script filters images before page load (meaning you don't see offending images "flicker" briefly in view when you refresh the page)
-* and hiding an image instantly takes 1 click instead of 3
+* better performance, filtered images are never loaded
+* 1 click hiding 
 
 # Usage
 
-Install the userscript and navigate to /mlp/. Every image has a hide/show button, which adds or removes its MD5 from your local storage databse. On the top right of the page is a button with import/export options for your local storage database. Find a manually picked selection of entries for your database in this repository.
+Install the userscript and navigate to /mlp/. Every image has a hide/show button, which adds or removes its MD5 from your local storage databse. On the top right of the page is a button with import/export options for your local storage database. This repository contains an example database.
 
-# Clearing
+# Clearing All Local Data
 
-> :warning: **Attention**: If you "clear all local data" in your browser, it will also clear this local store. Please use the "Export" button early and often, and only clear your cookies when trying to circumvent 4chan bans. You can do this by going into developer console (F12) on 4chan, clicking on storage manager, and clearing only the "cookies" entry there.
+Using "clear all local data" in your browser also clears this extension's store. When circumventing 4chan bans: Clear only the cookies (console (F12) on 4chan, click on storage manager, manually clear the "cookies" entry)
 
 # Limitations
 
-Requires a fairly up-to-date browser version. 
-Interferes with advanced 4chan X filtering (ex. thread collapsing based on image MD5s doesn't work after this script removes the images) 
+Interferes with MD5-related 4chan X functionality (ex. thread collapsing based on image MD5s doesn't work after this script removes the images) 
 
 ## Known issues
 
